@@ -104,7 +104,7 @@ app.post("/api/v1/content", userMiddleware, async (req, res) => {
     tag: [],
   });
 
-  res.json({
+  res.status(200).json({
     message: "The content is created",
   });
 });
@@ -137,7 +137,9 @@ app.delete("/api/v1/content", userMiddleware, async (req, res) => {
 });
 
 // Share Brain
-app.post("/api/v1/brain/share", (req, res) => {});
+app.post("/api/v1/brain/share", (req, res) => {
+  
+});
 
 // Brain Link
 app.get("/api/v1/brain/:shareLink", (req, res) => {});

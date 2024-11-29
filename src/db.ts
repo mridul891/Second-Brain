@@ -10,9 +10,12 @@ const userSchema = new Schema({
   },
 });
 
+const contentTypes = ["image", "video", "article", "audio"]; // Extend as needed
+
 const contentSchema = new Schema({
   title: String,
   link: String,
+  type: { type: String, enum: contentTypes, required: true },
   tags: [
     {
       type: mongoose.Types.ObjectId,
@@ -26,6 +29,24 @@ const contentSchema = new Schema({
   },
 });
 
+const tagSchema = new Schema({
+  tagname: {
+    Type: String,
+  },
+});
+
+const LinkSchema = new Schema({
+  hash: {
+    type: String,
+  },
+  userId: {
+    type: mongoose.Types.ObjectId,
+    ref: "User",
+    required: true,
+  },
+});
+
 export const UserModel = model("User", userSchema);
 export const ContentModel = model("Content", contentSchema);
- 
+export const TagModel = model("Tag", tagSchema);
+export const LinkModel = model("Link", LinkSchema);
