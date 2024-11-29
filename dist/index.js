@@ -94,9 +94,28 @@ app.post("/api/v1/content", middleware_1.userMiddleware, (req, res) => __awaiter
     });
 }));
 // Get Content
-app.get("/api/v1/content", (req, res) => { });
+app.get("/api/v1/content", middleware_1.userMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    // @ts-ignore
+    const userId = req.userId;
+    const content = yield db_1.ContentModel.find({
+        userId,
+    }).populate("userId", "username");
+    res.status(200).json({
+        content,
+    });
+}));
 // Delete Content
-app.delete("/api/v1/content", (req, res) => { });
+app.delete("/api/v1/content", middleware_1.userMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const contentId = req.body.contentId;
+    yield db_1.ContentModel.deleteMany({
+        contentId,
+        // @ts-ignore
+        userId: req.userId,
+    });
+    res.json({
+        message: "Deleted The content"
+    });
+}));
 // Share Brain
 app.post("/api/v1/brain/share", (req, res) => { });
 // Brain Link

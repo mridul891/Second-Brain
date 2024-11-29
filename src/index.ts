@@ -103,17 +103,38 @@ app.post("/api/v1/content", userMiddleware, async (req, res) => {
     userId: req.userId,
     tag: [],
   });
-  
+
   res.json({
     message: "The content is created",
   });
 });
 
 // Get Content
-app.get("/api/v1/content", (req, res) => {});
+app.get("/api/v1/content", userMiddleware, async (req, res) => {
+  // @ts-ignore
+  const userId = req.userId;
+  const content = await ContentModel.find({
+    userId,
+  }).populate("userId", "username");
+
+  res.status(200).json({
+    content,
+  });
+});
 
 // Delete Content
-app.delete("/api/v1/content", (req, res) => {});
+app.delete("/api/v1/content", userMiddleware, async (req, res) => {
+  const contentId = req.body.contentId;
+  await ContentModel.deleteMany({
+    contentId,
+    // @ts-ignore
+    userId: req.userId,
+  });
+
+  res.json({
+    message : "Deleted The content"
+  })
+});
 
 // Share Brain
 app.post("/api/v1/brain/share", (req, res) => {});
