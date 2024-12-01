@@ -23,7 +23,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ContentModel = exports.UserModel = void 0;
+exports.LinkModel = exports.TagModel = exports.ContentModel = exports.UserModel = void 0;
 const mongoose_1 = __importStar(require("mongoose"));
 const userSchema = new mongoose_1.Schema({
     username: {
@@ -34,9 +34,11 @@ const userSchema = new mongoose_1.Schema({
         type: String,
     },
 });
+const contentTypes = ["image", "video", "article", "audio"]; // Extend as needed
 const contentSchema = new mongoose_1.Schema({
     title: String,
     link: String,
+    type: { type: String, enum: contentTypes, required: true },
     tags: [
         {
             type: mongoose_1.default.Types.ObjectId,
@@ -49,5 +51,23 @@ const contentSchema = new mongoose_1.Schema({
         required: true,
     },
 });
+const tagSchema = new mongoose_1.Schema({
+    tagname: {
+        Type: String,
+    },
+});
+const LinkSchema = new mongoose_1.Schema({
+    hash: {
+        type: String,
+    },
+    userId: {
+        type: mongoose_1.default.Types.ObjectId,
+        ref: "User",
+        required: true,
+        unique: true,
+    },
+});
 exports.UserModel = (0, mongoose_1.model)("User", userSchema);
 exports.ContentModel = (0, mongoose_1.model)("Content", contentSchema);
+exports.TagModel = (0, mongoose_1.model)("Tag", tagSchema);
+exports.LinkModel = (0, mongoose_1.model)("Link", LinkSchema);

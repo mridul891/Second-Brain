@@ -1,10 +1,11 @@
 import express from "express";
-import { ContentModel, UserModel } from "./db";
+import { ContentModel, LinkModel, UserModel } from "./db";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 import { userMiddleware } from "./middleware";
 import { SECRET } from "./config";
+import { random } from "./utilis";
 
 const app = express();
 app.use(express.json());
@@ -132,17 +133,66 @@ app.delete("/api/v1/content", userMiddleware, async (req, res) => {
   });
 
   res.json({
-    message : "Deleted The content"
-  })
+    message: "Deleted The content",
+  });
 });
 
 // Share Brain
-app.post("/api/v1/brain/share", (req, res) => {
-  
+app.post("/api/v1/brain/share", userMiddleware, async (req, res) => {
+  const { share } = req.body;
+  if (share) {
+    const exisitingHash = await LinkModel.findOne({
+      userId: req.userId,
+    });
+
+    if (exisitingHash) {
+      res.json({
+        message: "/share/" + exisitingHash.hash,
+      });
+      return;
+    }
+
+    const hash = random(10);
+    await LinkModel.create({
+      userId: req.userId,
+      hash: hash,
+    });
+
+    res.json({
+      message: "/share/" + hash,
+    });
+  } else {
+    await LinkModel.deleteOne({
+      userId: req.userId,
+    });
+
+    res.json({
+      message: "removed LInk",
+    });
+  }
 });
 
 // Brain Link
-app.get("/api/v1/brain/:shareLink", (req, res) => {});
+app.get("/api/v1/brain/:shareLink", async (req, res) => {
+  const hash = req.params.shareLink;
+  const link = await LinkModel.findOne({
+    hash,
+  });
+  if (!link) {
+    res.status(400).json({
+      message: " The hash is incorrect",
+    });
+    return;  
+  }
+
+  const content = await ContentModel.find({
+    userId: link.userId,
+  }).populate("userId" , "username");
+
+  res.json({
+    content,
+  });
+});
 
 app.listen(3000, () => {
   console.log(`server running at http://localhost:3000`);

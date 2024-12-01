@@ -25,7 +25,7 @@ const userMiddleware = (req, res, next) => __awaiter(void 0, void 0, void 0, fun
     }
     else {
         res.status(400).json({
-            message: "You are not loggged in "
+            message: "You are not loggged in ",
         });
     }
 });

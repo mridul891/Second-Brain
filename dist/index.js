@@ -19,6 +19,7 @@ const mongoose_1 = __importDefault(require("mongoose"));
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const middleware_1 = require("./middleware");
 const config_1 = require("./config");
+const utilis_1 = require("./utilis");
 const app = (0, express_1.default)();
 app.use(express_1.default.json());
 mongoose_1.default.connect("mongodb+srv://pandeymridulwork:mridul891@secondbrain.oryn8.mongodb.net/");
@@ -89,7 +90,7 @@ app.post("/api/v1/content", middleware_1.userMiddleware, (req, res) => __awaiter
         userId: req.userId,
         tag: [],
     });
-    res.json({
+    res.status(200).json({
         message: "The content is created",
     });
 }));
@@ -113,13 +114,59 @@ app.delete("/api/v1/content", middleware_1.userMiddleware, (req, res) => __await
         userId: req.userId,
     });
     res.json({
-        message: "Deleted The content"
+        message: "Deleted The content",
     });
 }));
 // Share Brain
-app.post("/api/v1/brain/share", (req, res) => { });
+app.post("/api/v1/brain/share", middleware_1.userMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { share } = req.body;
+    if (share) {
+        const exisitingHash = yield db_1.LinkModel.findOne({
+            userId: req.userId,
+        });
+        if (exisitingHash) {
+            res.json({
+                message: "/share/" + exisitingHash.hash,
+            });
+            return;
+        }
+        const hash = (0, utilis_1.random)(10);
+        yield db_1.LinkModel.create({
+            userId: req.userId,
+            hash: hash,
+        });
+        res.json({
+            message: "/share/" + hash,
+        });
+    }
+    else {
+        yield db_1.LinkModel.deleteOne({
+            userId: req.userId,
+        });
+        res.json({
+            message: "removed LInk",
+        });
+    }
+}));
 // Brain Link
-app.get("/api/v1/brain/:shareLink", (req, res) => { });
+app.get("/api/v1/brain/:shareLink", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const hash = req.params.shareLink;
+    const link = yield db_1.LinkModel.findOne({
+        hash,
+    });
+    if (!link) {
+        res.status(400).json({
+            message: " The hash is incorrect",
+        });
+        return;
+    }
+    const content = yield db_1.ContentModel.find({
+        userId: link.userId,
+    }).populate("userId", "username");
+    res.json({
+        content,
+    });
+}));
 app.listen(3000, () => {
     console.log(`server running at http://localhost:3000`);
 });

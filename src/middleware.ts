@@ -2,6 +2,14 @@ import { NextFunction, Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import { SECRET } from "./config";
 
+declare global {
+  namespace Express {
+    interface Request {
+      userId: string;
+    }
+  }
+}
+
 export const userMiddleware = async (
   req: Request,
   res: Response,
@@ -14,9 +22,9 @@ export const userMiddleware = async (
     //@ts-ignore
     req.userId = decode.id;
     next();
-  }else{
+  } else {
     res.status(400).json({
-        message : "You are not loggged in "
-    })
+      message: "You are not loggged in ",
+    });
   }
 };
