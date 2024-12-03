@@ -20,8 +20,10 @@ const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const middleware_1 = require("./middleware");
 const config_1 = require("./config");
 const utilis_1 = require("./utilis");
+const cors_1 = __importDefault(require("cors"));
 const app = (0, express_1.default)();
 app.use(express_1.default.json());
+app.use((0, cors_1.default)());
 mongoose_1.default.connect("mongodb+srv://pandeymridulwork:mridul891@secondbrain.oryn8.mongodb.net/");
 app.get("/api/v1/", (req, res) => {
     res.json({
@@ -40,14 +42,15 @@ app.post("/api/v1/signup", (req, res) => __awaiter(void 0, void 0, void 0, funct
         res.status(401).json({
             message: "User Already Exists",
         });
+        return;
     }
     const hashpassword = yield bcryptjs_1.default.hash(password, 8);
     const user = yield db_1.UserModel.create({
-        username: username,
+        username,
         password: hashpassword,
     });
     const token = jsonwebtoken_1.default.sign({
-        username: user.username,
+        userId: username,
         _id: user._id,
     }, config_1.SECRET);
     res.json({
@@ -64,19 +67,29 @@ app.post("/api/v1/signin", (req, res) => __awaiter(void 0, void 0, void 0, funct
         res.status(400).json({
             message: "User Not Present Please Sign up ",
         });
+        return;
     }
-    bcryptjs_1.default.compare(password, (isUserPresent === null || isUserPresent === void 0 ? void 0 : isUserPresent.password) || " ", function (err, result) {
+    console.log(isUserPresent.password);
+    bcryptjs_1.default.compare(password, isUserPresent === null || isUserPresent === void 0 ? void 0 : isUserPresent.password, (err, isMatch) => {
         if (err) {
-            res.status(402).json({ message: "The passowrd is inCorrect" });
+            return res.status(402).json({ message: "Error occured while Checking" });
         }
-        const token = jsonwebtoken_1.default.sign({
-            username: isUserPresent === null || isUserPresent === void 0 ? void 0 : isUserPresent.username,
-            id: isUserPresent === null || isUserPresent === void 0 ? void 0 : isUserPresent._id,
-        }, config_1.SECRET);
-        return res.status(200).json({
-            token: token,
-            message: " User Successfully Sign up",
-        });
+        if (isMatch) {
+            const token = jsonwebtoken_1.default.sign({
+                username: isUserPresent.username,
+                id: isUserPresent._id,
+            }, config_1.SECRET);
+            res.status(200).json({
+                token,
+                message: "User Successfully Sign up",
+            });
+            return;
+        }
+        else {
+            return res.json(400).json({
+                message: "Password is Wrong",
+            });
+        }
     });
 }));
 // create Content

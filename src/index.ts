@@ -6,10 +6,10 @@ import bcrypt from "bcryptjs";
 import { userMiddleware } from "./middleware";
 import { SECRET } from "./config";
 import { random } from "./utilis";
-
+import cors from "cors";
 const app = express();
 app.use(express.json());
-
+app.use(cors());
 mongoose.connect(
   "mongodb+srv://pandeymridulwork:mridul891@secondbrain.oryn8.mongodb.net/"
 );
@@ -34,18 +34,19 @@ app.post("/api/v1/signup", async (req, res) => {
     res.status(401).json({
       message: "User Already Exists",
     });
+    return;
   }
 
   const hashpassword = await bcrypt.hash(password, 8);
 
   const user = await UserModel.create({
-    username: username,
+    username,
     password: hashpassword,
   });
 
   const token = jwt.sign(
     {
-      username: user.username,
+      userId: username,
       _id: user._id,
     },
     SECRET
@@ -59,24 +60,23 @@ app.post("/api/v1/signup", async (req, res) => {
 
 // signin
 app.post("/api/v1/signin", async (req, res) => {
-  const username: string = req.body.username;
-  const password: string = req.body.password;
-
+  const username = req.body.username;
+  const password = req.body.password;
   const isUserPresent = await UserModel.findOne({ username });
-
   if (!isUserPresent) {
-    res.status(400).json({
+    return res.status(400).json({
       message: "User Not Present Please Sign up ",
     });
+    
   }
+  console.log(isUserPresent.password);
 
-  bcrypt.compare(
-    password,
-    isUserPresent?.password || " ",
-    function (err, result) {
-      if (err) {
-        res.status(402).json({ message: "The passowrd is inCorrect" });
-      }
+  try {
+    const isMatch = bcrypt.compareSync(
+      password,
+      isUserPresent.password as string
+    );
+    if (isMatch) {
       const token = jwt.sign(
         {
           username: isUserPresent?.username,
@@ -85,11 +85,19 @@ app.post("/api/v1/signin", async (req, res) => {
         SECRET
       );
       return res.status(200).json({
-        token: token,
-        message: " User Successfully Sign up",
+        token,
+        message: "User Successfully Sign up",
+      });
+    } else {
+      return res.json(400).json({
+        message: "Password is Wrong",
       });
     }
-  );
+  } catch (error) {
+    console.log(error)
+  }
+
+  
 });
 
 // create Content
@@ -182,12 +190,12 @@ app.get("/api/v1/brain/:shareLink", async (req, res) => {
     res.status(400).json({
       message: " The hash is incorrect",
     });
-    return;  
+    return;
   }
 
   const content = await ContentModel.find({
     userId: link.userId,
-  }).populate("userId" , "username");
+  }).populate("userId", "username");
 
   res.json({
     content,
