@@ -60,52 +60,45 @@ app.post("/api/v1/signup", (req, res) => __awaiter(void 0, void 0, void 0, funct
 }));
 // signin
 app.post("/api/v1/signin", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const username = req.body.username;
-    const password = req.body.password;
-    const isUserPresent = yield db_1.UserModel.findOne({ username });
-    if (!isUserPresent) {
-        res.status(400).json({
-            message: "User Not Present Please Sign up ",
-        });
-        return;
-    }
-    console.log(isUserPresent.password);
-    bcryptjs_1.default.compare(password, isUserPresent === null || isUserPresent === void 0 ? void 0 : isUserPresent.password, (err, isMatch) => {
-        if (err) {
-            return res.status(402).json({ message: "Error occured while Checking" });
+    try {
+        const { username, password } = req.body;
+        // Check if username and password are provided
+        if (!username || !password) {
+            return res.status(400).json({
+                message: "Username and Password are required",
+            });
         }
+        // Find the user by username
+        const isUserPresent = yield db_1.UserModel.findOne({ username });
+        if (!isUserPresent) {
+            return res.status(400).json({
+                message: "User not present. Please sign up.",
+            });
+        }
+        // Compare passwords
+        const isMatch = yield bcryptjs_1.default.compare(password, isUserPresent === null || isUserPresent === void 0 ? void 0 : isUserPresent.password);
         if (isMatch) {
             const token = jsonwebtoken_1.default.sign({
-                username: isUserPresent.username,
-                id: isUserPresent._id,
+                userId: username,
+                _id: isUserPresent._id
             }, config_1.SECRET);
-            res.status(200).json({
-                token,
-                message: "User Successfully Sign up",
+            return res.status(200).json({
+                token: token,
+                message: "User successfully signed in",
             });
-            return;
         }
         else {
-            return res.json(400).json({
-                message: "Password is Wrong",
+            return res.status(400).json({
+                message: "Incorrect password",
             });
         }
-    });
-}));
-// create Content
-app.post("/api/v1/content", middleware_1.userMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const title = req.body.title;
-    const link = req.body.link;
-    yield db_1.ContentModel.create({
-        title,
-        link,
-        //@ts-ignore
-        userId: req.userId,
-        tag: [],
-    });
-    res.status(200).json({
-        message: "The content is created",
-    });
+    }
+    catch (error) {
+        console.error("Error during sign-in:", error);
+        return res.status(500).json({
+            message: "Internal Server Error",
+        });
+    }
 }));
 // Get Content
 app.get("/api/v1/content", middleware_1.userMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {

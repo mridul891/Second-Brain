@@ -59,63 +59,49 @@ app.post("/api/v1/signup", async (req, res) => {
 });
 
 // signin
-app.post("/api/v1/signin", async (req, res) => {
-  const username = req.body.username;
-  const password = req.body.password;
-  const isUserPresent = await UserModel.findOne({ username });
-  if (!isUserPresent) {
-    return res.status(400).json({
-      message: "User Not Present Please Sign up ",
-    });
-    
-  }
-  console.log(isUserPresent.password);
-
+app.post("/api/v1/signin", async (req, res):Promise<any> => {
   try {
-    const isMatch = bcrypt.compareSync(
-      password,
-      isUserPresent.password as string
-    );
+    const { username, password } = req.body;
+
+    // Check if username and password are provided
+    if (!username || !password) {
+      return res.status(400).json({
+        message: "Username and Password are required",
+      });
+    }
+
+    // Find the user by username
+    const isUserPresent = await UserModel.findOne({ username });
+
+    if (!isUserPresent) {
+      return res.status(400).json({
+        message: "User not present. Please sign up.",
+      });
+    }
+
+    // Compare passwords
+    const isMatch =  await bcrypt.compare(password, isUserPresent?.password as string  );
+
     if (isMatch) {
-      const token = jwt.sign(
-        {
-          username: isUserPresent?.username,
-          id: isUserPresent?._id,
-        },
-        SECRET
-      );
+      const token = jwt.sign({
+        userId : username,
+        _id : isUserPresent._id
+      } ,SECRET)
       return res.status(200).json({
-        token,
-        message: "User Successfully Sign up",
+        token:token,
+        message: "User successfully signed in",
       });
     } else {
-      return res.json(400).json({
-        message: "Password is Wrong",
+      return res.status(400).json({
+        message: "Incorrect password",
       });
     }
   } catch (error) {
-    console.log(error)
+    console.error("Error during sign-in:", error);
+    return res.status(500).json({
+      message: "Internal Server Error",
+    });
   }
-
-  
-});
-
-// create Content
-app.post("/api/v1/content", userMiddleware, async (req, res) => {
-  const title = req.body.title;
-  const link = req.body.link;
-
-  await ContentModel.create({
-    title,
-    link,
-    //@ts-ignore
-    userId: req.userId,
-    tag: [],
-  });
-
-  res.status(200).json({
-    message: "The content is created",
-  });
 });
 
 // Get Content
